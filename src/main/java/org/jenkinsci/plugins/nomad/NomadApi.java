@@ -42,10 +42,16 @@ public final class NomadApi {
 
         try {
             RequestBody body = RequestBody.create(JSON, slaveJob);
-            Request request = new Request.Builder()
-                    .url(this.nomadApi + "/v1/job/" + slaveName + "?region=" + template.getRegion())
-                    .put(body)
-                    .build();
+            Request.Builder rb = new Request.Builder()
+               .url(this.nomadApi + "/v1/job/" + slaveName + "?region=" + template.getRegion())
+               .put(body);
+
+            if (template.getToken() != null && !template.getToken().isEmpty()) {
+                rb.addHeader("X-Nomad-Token", template.getToken());
+            }
+
+            Request request = rb.build();
+
 
             client.newCall(request).execute().body().close();
         } catch (IOException e) {
@@ -54,12 +60,17 @@ public final class NomadApi {
     }
 
 
-    public void stopSlave(String slaveName) {
+    public void stopSlave(String slaveName, String namespace, String token) {
 
-        Request request = new Request.Builder()
-                .url(this.nomadApi + "/v1/job/" + slaveName)
-                .delete()
-                .build();
+        Request.Builder rb = new Request.Builder()
+                 .url(this.nomadApi + "/v1/job/" + slaveName + (namespace != null && !namespace.isEmpty() ? "?namespace=" + namespace: ""))
+                 .delete();
+
+        if (token != null && !token.isEmpty()) {
+           rb.addHeader("X-Nomad-Token", token);
+        }
+
+        Request request = rb.build();
 
         try {
             client.newCall(request).execute().body().close();
@@ -99,7 +110,7 @@ public final class NomadApi {
         } else if (template.getDriver().equals("docker")) {
             String prefixCmd = template.getPrefixCmd();
             // If an addtional command is defined - prepend it to jenkins slave invocation
-            if (!prefixCmd.isEmpty())
+            if (prefixCmd != null && !prefixCmd.isEmpty())
             {
                 driverConfig.put("command", "/bin/bash");
                 String argString = prefixCmd + "; java -jar /local/slave.jar ";
@@ -116,7 +127,7 @@ public final class NomadApi {
             driverConfig.put("image", template.getImage());
 
             String hostVolumes = template.getHostVolumes();
-            if (!hostVolumes.isEmpty()) {
+            if (hostVolumes != null && !hostVolumes.isEmpty()) {
                 driverConfig.put("volumes", StringUtils.split(hostVolumes, ","));
             }
 
@@ -164,6 +175,7 @@ public final class NomadApi {
         Job job = new Job(
                 name,
                 name,
+                template.getNamespace(),
                 template.getRegion(),
                 "batch",
                 template.getPriority(),

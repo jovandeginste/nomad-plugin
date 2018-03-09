@@ -8,6 +8,7 @@ public final class Job {
     private String ID;
     private String Name;
     private String Region;
+    private String Namespace;
     private String Type;
     private Integer Priority;
     private String[] Datacenters;
@@ -17,6 +18,7 @@ public final class Job {
     public Job(
         String ID,
         String name,
+        String namespace,
         String region,
         String type,
         Integer priority,
@@ -27,6 +29,7 @@ public final class Job {
         this.ID = ID;
         Name = name;
         Region = region;
+        Namespace = namespace;
         Type = type;
         Priority = priority;
         Datacenters = datacenters;
@@ -56,6 +59,14 @@ public final class Job {
 
     public void setRegion(String region) {
         Region = region;
+    }
+
+    public String getNamespace() {
+        return Namespace;
+    }
+
+    public void setNamespace(String namespace) {
+        Namespace = namespace;
     }
 
     public String getType() {

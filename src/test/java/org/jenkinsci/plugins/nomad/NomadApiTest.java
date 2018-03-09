@@ -16,7 +16,8 @@ public class NomadApiTest {
 
     private NomadApi nomadApi = new NomadApi("http://localhost");
     private List<NomadConstraintTemplate> constraintTest = new ArrayList<NomadConstraintTemplate>();
-    private NomadSlaveTemplate slaveTemplate = new NomadSlaveTemplate(
+    private NomadSlaveTemplate slaveTemplate = new NomadSlaveTemplate( "namespace-test", 
+        "09652e67-e6e9-8dd1-eec9-999e49ac3e5f",
             "300", "256", "100",
             null, constraintTest, "remoteFs", "3", true, "1", Node.Mode.NORMAL,
             "ams", "0", "image", "dc01", "", "", false, "bridge",
