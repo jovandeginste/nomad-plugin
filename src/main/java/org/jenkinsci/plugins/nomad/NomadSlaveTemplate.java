@@ -1,25 +1,38 @@
 package org.jenkinsci.plugins.nomad;
 
+import com.cloudbees.plugins.credentials.CredentialsMatchers;
+import com.cloudbees.plugins.credentials.common.StandardListBoxModel;
+import com.cloudbees.plugins.credentials.domains.DomainRequirement;
+import com.google.common.base.Optional;
+import com.google.common.base.Strings;
+import com.google.common.base.Supplier;
 import hudson.Extension;
-import org.kohsuke.stapler.DataBoundConstructor;
-
 import hudson.Util;
 import hudson.model.Describable;
 import hudson.model.Descriptor;
 import hudson.model.Label;
 import hudson.model.Node;
 import hudson.model.labels.LabelAtom;
+import hudson.security.ACL;
+import hudson.util.FormValidation;
+import hudson.util.ListBoxModel;
+import hudson.util.Secret;
 import jenkins.model.Jenkins;
+import org.jenkinsci.plugins.plaincredentials.StringCredentials;
+import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.QueryParameter;
 
-import java.lang.reflect.Type;
-import com.google.gson.reflect.TypeToken;
-
-import javax.annotation.Nullable;
-import java.util.*;
+import javax.annotation.Nonnull;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
 import java.util.logging.Logger;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonObject;
+import static com.cloudbees.plugins.credentials.CredentialsMatchers.filter;
+import static com.cloudbees.plugins.credentials.CredentialsMatchers.withId;
+import static com.cloudbees.plugins.credentials.CredentialsProvider.lookupCredentials;
+import static com.cloudbees.plugins.credentials.domains.URIRequirementBuilder.fromUri;
+import static org.apache.commons.lang.StringUtils.trimToEmpty;
 
 public class NomadSlaveTemplate implements Describable<NomadSlaveTemplate> {
 
@@ -31,7 +44,7 @@ public class NomadSlaveTemplate implements Describable<NomadSlaveTemplate> {
     private final int numExecutors;
 
     private final String namespace;
-    private final String token;
+    private final String nomadTokenCredentialsId;
     private final int cpu;
     private final int memory;
     private final int disk;
@@ -59,7 +72,7 @@ public class NomadSlaveTemplate implements Describable<NomadSlaveTemplate> {
     @DataBoundConstructor
     public NomadSlaveTemplate(
             String namespace,
-            String token,
+            String nomadTokenCredentialsId,
             String cpu,
             String memory,
             String disk,
@@ -82,9 +95,9 @@ public class NomadSlaveTemplate implements Describable<NomadSlaveTemplate> {
             Boolean forcePull,
             String hostVolumes,
             String switchUser
-            ) {
+    ) {
         this.namespace = namespace;
-        this.token = token;
+        this.nomadTokenCredentialsId = nomadTokenCredentialsId;
         this.cpu = Integer.parseInt(cpu);
         this.memory = Integer.parseInt(memory);
         this.disk = Integer.parseInt(disk);
@@ -112,6 +125,7 @@ public class NomadSlaveTemplate implements Describable<NomadSlaveTemplate> {
         this.forcePull = forcePull;
         this.hostVolumes = hostVolumes;
         this.switchUser = switchUser;
+
         readResolve();
     }
 
@@ -120,7 +134,7 @@ public class NomadSlaveTemplate implements Describable<NomadSlaveTemplate> {
         return this;
     }
 
-   
+
     @Extension
     public static final class DescriptorImpl extends Descriptor<NomadSlaveTemplate> {
 
@@ -130,7 +144,22 @@ public class NomadSlaveTemplate implements Describable<NomadSlaveTemplate> {
 
         @Override
         public String getDisplayName() {
-            return null;
+            return "Nomad slave template";
+        }
+
+        public ListBoxModel doFillNomadTokenCredentialsIdItems(@QueryParameter String apiUrl,
+                                                               @QueryParameter String credentialsId) {
+            if (!Jenkins.getInstance().hasPermission(Jenkins.ADMINISTER)) {
+                return new StandardListBoxModel().includeCurrentValue(credentialsId);
+            }
+            return new StandardListBoxModel()
+                    .includeEmptyValue()
+                    .includeMatchingAs(ACL.SYSTEM,
+                            Jenkins.getInstance(),
+                            StringCredentials.class,
+                            fromUri(apiUrl).build(),
+                            CredentialsMatchers.always()
+                    );
         }
     }
 
@@ -151,7 +180,7 @@ public class NomadSlaveTemplate implements Describable<NomadSlaveTemplate> {
     public int getNumExecutors() {
         return numExecutors;
     }
-    
+
     public Node.Mode getMode() {
         return mode;
     }
@@ -160,8 +189,8 @@ public class NomadSlaveTemplate implements Describable<NomadSlaveTemplate> {
         return namespace;
     }
 
-    public String getToken() {
-        return token;
+    public String getNomadTokenCredentialsId() {
+        return nomadTokenCredentialsId;
     }
 
     public int getCpu() {
@@ -227,7 +256,7 @@ public class NomadSlaveTemplate implements Describable<NomadSlaveTemplate> {
     public String getPassword() {
         return password;
     }
-    
+
     public String getPrefixCmd() {
         return prefixCmd;
     }
@@ -255,4 +284,22 @@ public class NomadSlaveTemplate implements Describable<NomadSlaveTemplate> {
     public String getSwitchUser() {
         return switchUser;
     }
+
+    public String getTokenValue() {
+        return secretFor(this.nomadTokenCredentialsId);
+    }
+
+
+    @Nonnull
+    private static String secretFor(String credentialsId) {
+        List<StringCredentials> creds = filter(
+                lookupCredentials(StringCredentials.class,
+                        Jenkins.getInstance(),
+                        ACL.SYSTEM,
+                        Collections.<DomainRequirement>emptyList()),
+                withId(trimToEmpty(credentialsId))
+        );
+        return creds.get(0).getSecret().getPlainText();
+    }
+
 }

@@ -42,8 +42,8 @@ public class NomadSlave extends AbstractCloudSlave implements EphemeralNode {
         );
 
         this.cloud = cloud;
-	this.namespace = template.getNamespace();
-        this.token = template.getToken();
+        this.namespace = template.getNamespace();
+        this.token = template.getTokenValue();
         this.reusable = template.getReusable();
     }
 
@@ -75,7 +75,7 @@ public class NomadSlave extends AbstractCloudSlave implements EphemeralNode {
     }
 
     @Override
-    protected void _terminate(TaskListener listener)  {
+    protected void _terminate(TaskListener listener) {
         LOGGER.log(Level.INFO, "Asking Nomad to deregister slave '" + getNodeName() + "'");
         cloud.Nomad().stopSlave(getNodeName(), this.namespace, this.token);
     }

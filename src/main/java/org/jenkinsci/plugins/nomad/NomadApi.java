@@ -46,8 +46,8 @@ public final class NomadApi {
                .url(this.nomadApi + "/v1/job/" + slaveName + "?region=" + template.getRegion())
                .put(body);
 
-            if (template.getToken() != null && !template.getToken().isEmpty()) {
-                rb.addHeader("X-Nomad-Token", template.getToken());
+            if (template.getTokenValue() != null && !template.getTokenValue().isEmpty()) {
+                rb.addHeader("X-Nomad-Token", template.getTokenValue());
             }
 
             Request request = rb.build();
@@ -60,7 +60,7 @@ public final class NomadApi {
     }
 
 
-    public void stopSlave(String slaveName, String namespace, String token) {
+    public void stopSlave(String slaveName, String namespace,  String token) {
 
         Request.Builder rb = new Request.Builder()
                  .url(this.nomadApi + "/v1/job/" + slaveName + (namespace != null && !namespace.isEmpty() ? "?namespace=" + namespace: ""))
