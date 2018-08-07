@@ -63,7 +63,7 @@ public final class NomadApi {
     public void stopSlave(String slaveName, String namespace,  String token) {
 
         Request.Builder rb = new Request.Builder()
-                 .url(this.nomadApi + "/v1/job/" + slaveName + (namespace != null && !namespace.isEmpty() ? "?namespace=" + namespace: ""))
+                 .url(this.nomadApi + "/v1/job/" + slaveName + "?purge=true" + (namespace != null && !namespace.isEmpty() ? "&namespace=" + namespace: ""))
                  .delete();
 
         if (token != null && !token.isEmpty()) {
