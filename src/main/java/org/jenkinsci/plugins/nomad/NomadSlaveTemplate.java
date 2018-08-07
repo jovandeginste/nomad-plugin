@@ -299,7 +299,11 @@ public class NomadSlaveTemplate implements Describable<NomadSlaveTemplate> {
                         Collections.<DomainRequirement>emptyList()),
                 withId(trimToEmpty(credentialsId))
         );
-        return creds.get(0).getSecret().getPlainText();
+        if (creds.size() > 0) {
+            return creds.get(0).getSecret().getPlainText();
+        } else {
+            return null;
+        }
     }
 
 }
