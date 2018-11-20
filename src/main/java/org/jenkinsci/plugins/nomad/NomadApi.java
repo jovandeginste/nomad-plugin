@@ -84,6 +84,8 @@ public final class NomadApi {
         Map<String,Object> driverConfig = new HashMap<>();
 
         ArrayList<String> args = new ArrayList<>();
+        ArrayList<String> capargs = new ArrayList<>();
+        capargs.add("SYS_ADMIN");
         args.add("-jnlpUrl");
 
         args.add(Util.ensureEndsWith(template.getCloud().getJenkinsUrl(), "/") + "computer/" + name + "/slave-agent.jnlp");
@@ -135,6 +137,7 @@ public final class NomadApi {
             driverConfig.put("force_pull", template.getForcePull());
             driverConfig.put("privileged", template.getPrivileged());
             driverConfig.put("network_mode", template.getNetwork());
+            driverConfig.put("cap_add",capargs);
         }
 
         return driverConfig;
