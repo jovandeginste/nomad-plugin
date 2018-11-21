@@ -136,19 +136,20 @@ public class NomadCloud extends AbstractCloudImpl {
                     jnlpSecret = jenkins.slaves.JnlpSlaveAgentProtocol.SLAVE_SECRET.mac(slaveName);
             }
 
-            LOGGER.log(Level.INFO, "Asking Nomad to schedule new Jenkins slave");
+            LOGGER.log(Level.INFO, "Asking Nomad to schedule new Jenkins slave: " + slaveName);
             nomad.startSlave(slaveName, jnlpSecret, template);
 
             // Check scheduling success
             Callable<Boolean> callableTask = new Callable<Boolean>() {
                 public Boolean call() {
                     try {
-                        LOGGER.log(Level.INFO, "Slave scheduled, waiting for connection");
+                        LOGGER.log(Level.INFO, "Slave scheduled, waiting for connection with: " + slaveName);
                         slave.toComputer().waitUntilOnline();
                     } catch (InterruptedException e) {
-                        LOGGER.log(Level.SEVERE, "Waiting for connection was interrupted");
+                        LOGGER.log(Level.SEVERE, "Waiting for connection was interrupted: " + slaveName);
                         return false;
                     }
+                    LOGGER.log(Level.INFO, "Slave online: " + slaveName);
                     return true;
                 }
             };
@@ -159,15 +160,16 @@ public class NomadCloud extends AbstractCloudImpl {
 
             try {
                 future.get(1, TimeUnit.MINUTES);
-                LOGGER.log(Level.INFO, "Connection established");
+                LOGGER.log(Level.INFO, "Connection established with: " + slaveName);
             } catch (Exception ex) {
-                LOGGER.log(Level.SEVERE, "Slave computer did not come online within one minutes, terminating slave");
+                LOGGER.log(Level.SEVERE, "Slave computer did not come online within one minutes, terminating slave:" + slaveName);
                 slave.terminate();
             } finally {
                 future.cancel(true);
                 executorService.shutdown();
+                pending -= template.getNumExecutors();
             }
-            pending -= template.getNumExecutors();
+
             return slave;
         }
     }
