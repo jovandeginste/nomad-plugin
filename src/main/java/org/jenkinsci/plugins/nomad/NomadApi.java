@@ -57,7 +57,7 @@ public final class NomadApi {
     void stopSlave(String slaveName, String nomadToken) {
 
         Request.Builder builder = new Request.Builder()
-                .url(this.nomadApi + "/v1/job/" + slaveName);
+                .url(this.nomadApi + "/v1/job/" + slaveName + "?purge=false");
 
         if (StringUtils.isNotEmpty(nomadToken))
             builder = builder.addHeader("X-Nomad-Token", nomadToken);
